@@ -1,6 +1,13 @@
 name: ci
+run-name: ci-${{ inputs.request_id || github.event_name }}
 
 on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Unique cask-updater validation identifier
+        required: true
+        type: string
   pull_request:
   push:
     branches:
@@ -10,6 +17,13 @@ permissions:
   contents: read
 
 jobs:
+  updater-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test release-manifest reconciliation
+        run: python3 -m unittest discover -s tests
+
   audit:
     runs-on: macos-15
     steps:
