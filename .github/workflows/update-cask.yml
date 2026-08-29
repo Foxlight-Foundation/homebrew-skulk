@@ -30,6 +30,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: update-skulk-cask
@@ -97,7 +98,10 @@ jobs:
           fi
           echo "Cask update PR: ${pull_request_url}" >> "${GITHUB_STEP_SUMMARY}"
 
-          gh workflow run ci.yml --ref "${branch}"
+          validation_request_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh workflow run ci.yml \
+            --ref "${branch}" \
+            -f request_id="${validation_request_id}"
           validation_run_id=""
           for _ in {1..30}; do
             validation_run_id="$(
@@ -105,9 +109,11 @@ jobs:
                 --workflow ci.yml \
                 --branch "${branch}" \
                 --event workflow_dispatch \
-                --limit 1 \
-                --json databaseId \
-                --jq '.[0].databaseId'
+                --commit "$(git rev-parse HEAD)" \
+                --limit 30 \
+                --json databaseId,displayTitle \
+                --jq ".[] | select(.displayTitle == \"ci-${validation_request_id}\") | .databaseId" \
+                | head -n 1
             )"
             if [[ -n "${validation_run_id}" ]]; then
               break

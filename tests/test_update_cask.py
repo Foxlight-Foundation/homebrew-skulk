@@ -108,8 +108,11 @@ class UpdateCaskTests(unittest.TestCase):
         )
         ci_workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", ci_workflow)
-        self.assertIn('gh workflow run ci.yml --ref "${branch}"', updater_workflow)
+        self.assertIn("actions: write", updater_workflow)
+        self.assertIn("-f request_id=", updater_workflow)
         self.assertIn("--event workflow_dispatch", updater_workflow)
+        self.assertIn("--commit", updater_workflow)
+        self.assertIn("displayTitle", updater_workflow)
         self.assertIn('gh run watch "${validation_run_id}" --exit-status', updater_workflow)
 
 
