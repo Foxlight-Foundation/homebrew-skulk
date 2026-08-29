@@ -10,6 +10,13 @@ permissions:
   contents: read
 
 jobs:
+  updater-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test release-manifest reconciliation
+        run: python3 -m unittest discover -s tests
+
   audit:
     runs-on: macos-15
     steps:

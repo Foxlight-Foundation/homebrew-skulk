@@ -1,0 +1,98 @@
+name: update-cask
+run-name: update-cask-${{ inputs.request_id || 'scheduled' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Unique release-coordinator request identifier
+        required: true
+        type: string
+      expected_version:
+        description: Stable Skulk version expected in latest.json
+        required: true
+        type: string
+      expected_bundle_version:
+        description: macOS bundle version expected in latest.json
+        required: true
+        type: string
+      expected_skulk_commit:
+        description: Exact Skulk commit expected in latest.json
+        required: true
+        type: string
+      expected_desktop_commit:
+        description: Exact desktop commit expected in latest.json
+        required: true
+        type: string
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-skulk-cask
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconcile cask with the public stable manifest
+        id: release
+        env:
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+          EXPECTED_BUNDLE_VERSION: ${{ inputs.expected_bundle_version }}
+          EXPECTED_SKULK_COMMIT: ${{ inputs.expected_skulk_commit }}
+          EXPECTED_DESKTOP_COMMIT: ${{ inputs.expected_desktop_commit }}
+        run: |
+          arguments=(--github-output "${GITHUB_OUTPUT}")
+          if [[ -n "${EXPECTED_VERSION}" ]]; then
+            arguments+=(--expected-version "${EXPECTED_VERSION}")
+            arguments+=(--expected-bundle-version "${EXPECTED_BUNDLE_VERSION}")
+            arguments+=(--expected-skulk-commit "${EXPECTED_SKULK_COMMIT}")
+            arguments+=(--expected-desktop-commit "${EXPECTED_DESKTOP_COMMIT}")
+          fi
+          python3 scripts/update_cask.py "${arguments[@]}"
+      - name: Open the cask update pull request
+        if: steps.release.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          BUNDLE_VERSION: ${{ steps.release.outputs.bundle_version }}
+          SKULK_COMMIT: ${{ steps.release.outputs.skulk_commit }}
+          DESKTOP_COMMIT: ${{ steps.release.outputs.desktop_commit }}
+        run: |
+          branch="automation/skulk-${RELEASE_VERSION}-${BUNDLE_VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp Casks/skulk.rb "${RUNNER_TEMP}/skulk.rb"
+          git restore Casks/skulk.rb
+
+          if git ls-remote --exit-code --heads origin "${branch}" >/dev/null 2>&1; then
+            git fetch origin "${branch}"
+            git checkout -B "${branch}" FETCH_HEAD
+          else
+            git checkout -b "${branch}"
+          fi
+          cp "${RUNNER_TEMP}/skulk.rb" Casks/skulk.rb
+
+          git add Casks/skulk.rb
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update Skulk cask to ${RELEASE_VERSION}"
+            git push --set-upstream origin "${branch}"
+          fi
+
+          pull_request_url="$(gh pr list --head "${branch}" --state open --json url --jq '.[0].url')"
+          if [[ -z "${pull_request_url}" ]]; then
+            pull_request_url="$(gh pr create \
+              --base main \
+              --head "${branch}" \
+              --title "chore: update Skulk cask to ${RELEASE_VERSION}" \
+              --body "Updates the cask from the validated Skulk ${RELEASE_VERSION} (${BUNDLE_VERSION}) public release manifest.\n\nThe tap CI must pass before merge.")"
+          fi
+          echo "Cask update PR: ${pull_request_url}" >> "${GITHUB_STEP_SUMMARY}"
