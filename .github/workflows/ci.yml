@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Register checked-out tap
+        run: brew tap --custom-remote Foxlight-Foundation/skulk "${GITHUB_WORKSPACE}"
+      - name: Audit cask
+        run: brew audit --cask --strict Foxlight-Foundation/skulk/skulk
+      - name: Check cask style
+        run: brew style Foxlight-Foundation/skulk/skulk
