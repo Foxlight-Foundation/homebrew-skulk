@@ -96,3 +96,26 @@ jobs:
               --body "Updates the cask from the validated Skulk ${RELEASE_VERSION} (${BUNDLE_VERSION}) public release manifest.\n\nThe tap CI must pass before merge.")"
           fi
           echo "Cask update PR: ${pull_request_url}" >> "${GITHUB_STEP_SUMMARY}"
+
+          gh workflow run ci.yml --ref "${branch}"
+          validation_run_id=""
+          for _ in {1..30}; do
+            validation_run_id="$(
+              gh run list \
+                --workflow ci.yml \
+                --branch "${branch}" \
+                --event workflow_dispatch \
+                --limit 1 \
+                --json databaseId \
+                --jq '.[0].databaseId'
+            )"
+            if [[ -n "${validation_run_id}" ]]; then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "${validation_run_id}" ]]; then
+            echo "The cask validation workflow did not appear." >&2
+            exit 1
+          fi
+          gh run watch "${validation_run_id}" --exit-status

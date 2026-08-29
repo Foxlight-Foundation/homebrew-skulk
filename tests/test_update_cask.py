@@ -100,6 +100,18 @@ class UpdateCaskTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("expected version", result.stderr)
 
+    def test_automation_explicitly_runs_ci_for_generated_pull_requests(self) -> None:
+        """Bot-created cask branches must receive the same audit and test workflow."""
+        root = Path(__file__).resolve().parents[1]
+        updater_workflow = (root / ".github/workflows/update-cask.yml").read_text(
+            encoding="utf-8"
+        )
+        ci_workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", ci_workflow)
+        self.assertIn('gh workflow run ci.yml --ref "${branch}"', updater_workflow)
+        self.assertIn("--event workflow_dispatch", updater_workflow)
+        self.assertIn('gh run watch "${validation_run_id}" --exit-status', updater_workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
