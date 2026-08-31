@@ -100,8 +100,8 @@ class UpdateCaskTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("expected version", result.stderr)
 
-    def test_automation_explicitly_runs_ci_for_generated_pull_requests(self) -> None:
-        """Bot-created cask branches must receive the same audit and test workflow."""
+    def test_automation_stages_and_validates_coordinator_ready_branch(self) -> None:
+        """The tap must validate its branch without relying on PR permissions."""
         root = Path(__file__).resolve().parents[1]
         updater_workflow = (root / ".github/workflows/update-cask.yml").read_text(
             encoding="utf-8"
@@ -114,6 +114,8 @@ class UpdateCaskTests(unittest.TestCase):
         self.assertIn("--commit", updater_workflow)
         self.assertIn("displayTitle", updater_workflow)
         self.assertIn('gh run watch "${validation_run_id}" --exit-status', updater_workflow)
+        self.assertIn("The release coordinator must open", updater_workflow)
+        self.assertNotIn("gh pr create", updater_workflow)
 
 
 if __name__ == "__main__":

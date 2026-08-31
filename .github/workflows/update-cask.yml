@@ -29,7 +29,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
   actions: write
 
 concurrency:
@@ -59,7 +58,7 @@ jobs:
             arguments+=(--expected-desktop-commit "${EXPECTED_DESKTOP_COMMIT}")
           fi
           python3 scripts/update_cask.py "${arguments[@]}"
-      - name: Open the cask update pull request
+      - name: Stage and validate the cask update branch
         if: steps.release.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -88,16 +87,6 @@ jobs:
             git push --set-upstream origin "${branch}"
           fi
 
-          pull_request_url="$(gh pr list --head "${branch}" --state open --json url --jq '.[0].url')"
-          if [[ -z "${pull_request_url}" ]]; then
-            pull_request_url="$(gh pr create \
-              --base main \
-              --head "${branch}" \
-              --title "chore: update Skulk cask to ${RELEASE_VERSION}" \
-              --body "Updates the cask from the validated Skulk ${RELEASE_VERSION} (${BUNDLE_VERSION}) public release manifest.\n\nThe tap CI must pass before merge.")"
-          fi
-          echo "Cask update PR: ${pull_request_url}" >> "${GITHUB_STEP_SUMMARY}"
-
           validation_request_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           gh workflow run ci.yml \
             --ref "${branch}" \
@@ -125,3 +114,5 @@ jobs:
             exit 1
           fi
           gh run watch "${validation_run_id}" --exit-status
+          echo "Validated cask update branch: ${branch}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "The release coordinator must open the reviewed pull request." >> "${GITHUB_STEP_SUMMARY}"

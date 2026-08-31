@@ -28,10 +28,13 @@ brew upgrade --cask Foxlight-Foundation/skulk/skulk
 Homebrew is the update channel for the current app. In-app update notification
 can be added later; the app does not presently update itself.
 
-Each coordinated Skulk release validates the public stable manifest and opens
-a cask update pull request in this tap. Tap CI audits and styles the proposed
-cask before it is merged. A scheduled reconciler provides a fallback if the
-release-triggered update is interrupted; neither path bypasses review.
+Each coordinated Skulk release asks this tap to validate the public stable
+manifest, push a deterministic cask branch, and run the tap's audit and style
+checks. After that validation succeeds, the desktop release coordinator opens
+a normal pull request with its narrowly scoped automation token. A scheduled
+reconciler can stage and validate the same deterministic branch if the
+release-triggered update is interrupted; a coordinator or maintainer must
+still open the pull request. Neither path bypasses review.
 
 ## Uninstall Skulk
 
