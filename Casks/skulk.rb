@@ -1,8 +1,8 @@
 cask "skulk" do
-  version "1.5.1"
-  sha256 "ca707109e83ca229146a02652cfc96c8ea5831a835d811ba008b470eb9b01aa0"
+  version "2.0.0"
+  sha256 "9006e3b5b305a4603c9b9a5af5db098d4cdb9a0a8f784a5dbd7a36634e9a04ad"
 
-  url "https://releases.foxlight.ai/desktop/macos/#{version}/3/Skulk-1.5.1-3-macOS-arm64.dmg"
+  url "https://releases.foxlight.ai/desktop/macos/#{version}/1/Skulk-2.0.0-1-macOS-arm64.dmg"
   name "Skulk"
   desc "Desktop operator for Skulk clusters"
   homepage "https://github.com/Foxlight-Foundation/Skulk"
