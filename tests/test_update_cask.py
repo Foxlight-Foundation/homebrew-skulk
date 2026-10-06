@@ -63,8 +63,8 @@ class UpdateCaskTests(unittest.TestCase):
             result.workflow_output = output_path.read_text(encoding="utf-8") if output_path.exists() else ""  # type: ignore[attr-defined]
             return result
 
-    def test_renders_verified_cask_from_exact_release_identity(self) -> None:
-        """A valid manifest must produce a pinned, verified cask and outputs."""
+    def test_renders_cask_from_exact_release_identity(self) -> None:
+        """A valid manifest must produce a pinned cask and outputs."""
         result = self._run(
             self._manifest(),
             "--expected-version",
@@ -79,7 +79,8 @@ class UpdateCaskTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('version "1.6.0"', result.cask)  # type: ignore[attr-defined]
         self.assertIn('sha256 "' + ("c" * 64) + '"', result.cask)  # type: ignore[attr-defined]
-        self.assertIn('verified: "releases.foxlight.ai/"', result.cask)  # type: ignore[attr-defined]
+        # Homebrew deprecated the url stanza's `verified:` parameter; audit rejects it.
+        self.assertNotIn("verified:", result.cask)  # type: ignore[attr-defined]
         self.assertIn("bundle_version=3", result.workflow_output)  # type: ignore[attr-defined]
         self.assertIn("changed=true", result.workflow_output)  # type: ignore[attr-defined]
 

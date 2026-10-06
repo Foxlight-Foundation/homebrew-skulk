@@ -97,8 +97,7 @@ def _render_cask(version: str, bundle_version: int, sha256: str) -> str:
   version "{version}"
   sha256 "{sha256}"
 
-  url "https://releases.foxlight.ai/desktop/macos/#{{version}}/{bundle_version}/Skulk-{version}-{bundle_version}-macOS-arm64.dmg",
-      verified: "releases.foxlight.ai/"
+  url "https://releases.foxlight.ai/desktop/macos/#{{version}}/{bundle_version}/Skulk-{version}-{bundle_version}-macOS-arm64.dmg"
   name "Skulk"
   desc "Desktop operator for Skulk clusters"
   homepage "https://github.com/Foxlight-Foundation/Skulk"
