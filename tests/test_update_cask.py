@@ -81,6 +81,10 @@ class UpdateCaskTests(unittest.TestCase):
         self.assertIn('sha256 "' + ("c" * 64) + '"', result.cask)  # type: ignore[attr-defined]
         # Homebrew deprecated the url stanza's `verified:` parameter; audit rejects it.
         self.assertNotIn("verified:", result.cask)  # type: ignore[attr-defined]
+        # Removing the app must also stop the per-user plugin service it registered.
+        self.assertIn('uninstall launchctl: "foundation.foxlight.skulk.plugins"', result.cask)  # type: ignore[attr-defined]
+        self.assertIn('"~/Library/LaunchAgents/foundation.foxlight.skulk.plugins.plist"', result.cask)  # type: ignore[attr-defined]
+        self.assertIn('"~/Library/Application Support/Skulk"', result.cask)  # type: ignore[attr-defined]
         self.assertIn("bundle_version=3", result.workflow_output)  # type: ignore[attr-defined]
         self.assertIn("changed=true", result.workflow_output)  # type: ignore[attr-defined]
 

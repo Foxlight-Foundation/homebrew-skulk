@@ -11,4 +11,14 @@ cask "skulk" do
   depends_on macos: :sequoia
 
   app "Skulk.app"
+
+  # The plugin service Skulk registers for the user would otherwise keep
+  # retrying a binary that no longer exists after the app is removed.
+  uninstall launchctl: "foundation.foxlight.skulk.plugins",
+            delete:    "~/Library/LaunchAgents/foundation.foxlight.skulk.plugins.plist"
+
+  zap trash: [
+    "~/Library/Application Support/Skulk",
+    "~/Library/Logs/Skulk",
+  ]
 end
